@@ -13,3 +13,8 @@ Chcemy stworzyć model, który będzie tworzył playlisty z pasującymi do siebi
 
 1. Co oznacza atrybut expolicit? Jest on bardzo niezbalansowany i przy kluczowym znaczeniu mógłby przeszkodzić w klasyfikacji.
 2. Co oznacza atrybut valence?
+
+
+pouplarność vs duration
+energy vs dancebility
+speachness vs acusticness
