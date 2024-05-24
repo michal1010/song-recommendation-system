@@ -7,7 +7,7 @@ app = FastAPI()
 
 
 # setting up the microservice: python -m uvicorn microservice:app --reload
-# example of using the microservice: curl http://127.0.0.1:8000/status
+# example of using the microservice: curl http://127.0.0.1:8000/generate/neural?genre=pop&num_tracks=50
 
 
 @app.get("/status")
