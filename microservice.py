@@ -1,5 +1,6 @@
 from typing import Annotated
-
+from Playlist import Playlist
+from RegresionModel import RegresionModel
 from fastapi import FastAPI, HTTPException, Query, Path
 
 app = FastAPI()
@@ -19,9 +20,14 @@ async def check_status():
     return {"status": "OK"}
 
 
-@app.get("/generate/neural")
-async def generate_neural():
-    pass
+@app.get("/generate/neural", response_model=list)
+async def generate_neural(genre: str, num_tracks: int):
+    models = {}
+    genres_to_filter = ['pop', 'trap', 'rap', 'rock', 'metal', 'hip hop']
+    for genre in genres_to_filter:
+        models[genre] = f'state_dicts/{genre}_model_dict.pt'
+    playlist = Playlist(models, RegresionModel)
+    return playlist.create_playlist(genre, num_tracks, 'tracks.jsonl', 'artists.jsonl').to_numpy().tolist()
 
 
 @app.get("/generate/sessions")

@@ -46,8 +46,8 @@ class Playlist:
         tracks_to_playlist = self._tracks.filter(items=['id', 'name', 'id_artist'])
         tracks_to_playlist['coherence'] = rating
         tracks_to_playlist['coherence'] = tracks_to_playlist['coherence'].apply(lambda x: x[0])
-        tracks_to_playlist.sort_values(by='coherence')
-        return tracks_to_playlist.iloc[:, :length]
+        tracks_to_playlist = tracks_to_playlist.sort_values('coherence', ascending=False)
+        return tracks_to_playlist[:length]
 
     def _filter_genres(self, genre_list, regex_pattern):
         return [genre for genre in genre_list if pd.Series([genre]).str.contains(regex_pattern, regex=True).any()]
