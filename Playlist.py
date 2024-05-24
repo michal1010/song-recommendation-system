@@ -22,27 +22,38 @@ class Playlist:
             model.load_state_dict(torch.load(parameters_path))
             model.eval()
             models[genre] = model
+        return models
 
-    def create_playlist(self, genre, length, tracks_path):
+    def _create_data_loader(self, tracks):
+        tracks_tensor = torch.tensor(tracks.values, dtype=torch.float32)
+        return data.DataLoader(tracks_tensor, batch_size=256)
+
+    def create_playlist(self, genre, length, tracks_path, artists_path):
         if genre in self.models.keys():
             model = self.models[genre]
         else:
             return 'Wrong genre selected choose the one from : pop, trap' \
                     + 'rap, rock, metal, hip hop'
-        self._tracks = self._get_tracks(tracks_path, genre)
+        self._tracks = self._get_tracks(tracks_path, artists_path, genre)
 
-        tracks = self._tracks.drop(["id", 'name', 'explicit', 'id_artist', 'key', 'release_date'], axis=1)
-        rating = model(tracks)
+        tracks = self._tracks.drop(["id", 'name', 'explicit', 'id_artist', 'key', 'release_date', 'popularity'], axis=1)
+        rating = []
+        data_loader = self._create_data_loader(tracks)
+        for batch in data_loader:
+            out = model(batch)
+            rating.extend(out.tolist())
+
         tracks_to_playlist = self._tracks.filter(items=['id', 'name', 'id_artist'])
         tracks_to_playlist['coherence'] = rating
-        tracks_to_playlist.sort_values()
-        return tracks_to_playlist.loc[:, :length]
+        tracks_to_playlist['coherence'] = tracks_to_playlist['coherence'].apply(lambda x: x[0])
+        tracks_to_playlist.sort_values(by='coherence')
+        return tracks_to_playlist.iloc[:, :length]
 
-    def _filter_genres(genre_list, regex_pattern):
+    def _filter_genres(self, genre_list, regex_pattern):
         return [genre for genre in genre_list if pd.Series([genre]).str.contains(regex_pattern, regex=True).any()]
 
-    def _get_tracks(self, tracks_path, genre) -> pd.DataFrame:
-        artists = pd.read_json('artists.jsonl', lines=True)
+    def _get_tracks(self, tracks_path, artists_path, genre) -> pd.DataFrame:
+        artists = pd.read_json(artists_path, lines=True)
         filtered_artists = pd.DataFrame()
         for genre in self._genres_to_filter:
             regex_pattern = fr'\b({genre})\b'
@@ -54,12 +65,12 @@ class Playlist:
 
         filtered_artists = filtered_artists.drop(columns=['filtered_genres'])
 
-        tracks = pd.read_json('tracks.jsonl', lines=True)
+        tracks = pd.read_json(tracks_path, lines=True)
 
         genre_frame = filtered_artists[filtered_artists['genres'] == genre]
         genre_artist_ids = genre_frame['id'].tolist()
         tracks =  tracks[tracks['id_artist'].apply(lambda x: x in genre_artist_ids)]
-        return tracks.drop(["id", 'name', 'explicit', 'id_artist', 'key', 'release_date'], axis=1)
+        return tracks
 
 
 
