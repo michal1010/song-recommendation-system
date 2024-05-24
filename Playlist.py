@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 class Playlist:
 
-    def __init__(self, models_parameters: dict, model_name, tracks_path) -> None:
+    def __init__(self, models_parameters: dict, model_name) -> None:
         self.models = self._create_models(models_parameters, model_name)
         self._genres_to_filter = ['pop', 'trap', 'rap', 'rock', 'metal', 'hip hop']
 
