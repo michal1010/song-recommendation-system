@@ -22,12 +22,15 @@ async def check_status():
 
 @app.get("/generate/neural", response_model=list)
 async def generate_neural(genre: str, num_tracks: int):
-    models = {}
+    models_NN = {}
+    models_GB = {}
     genres_to_filter = ['pop', 'trap', 'rap', 'rock', 'metal', 'hip hop']
     for genre in genres_to_filter:
-        models[genre] = f'state_dicts/{genre}_model_dict.pt'
-    playlist = Playlist(models, RegresionModel)
-    return playlist.create_playlist(genre, num_tracks, 'tracks.jsonl', 'artists.jsonl').to_numpy().tolist()
+        models_NN[genre] = f'state_dicts/{genre}_model_dict.pt'
+    for genre in genres_to_filter:
+        models_GB[genre] = f'state_dicts_GB/{genre}_state_dict.joblib'
+    playlist = Playlist(models_NN, models_GB)
+    return playlist.create_playlist(genre, num_tracks, 'tracks.jsonl', 'artists.jsonl', model='NN').to_numpy().tolist()
 
 
 @app.get("/generate/sessions")
