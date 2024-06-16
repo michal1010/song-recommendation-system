@@ -73,12 +73,12 @@ class RegresionModelManyLayers(nn.Module):
         self.bn1 = nn.BatchNorm1d(128)
         self.d1 = nn.Dropout(0.3)
 
-        self.layers2 = nn.Linear(128, 128)
+        self.layer2 = nn.Linear(128, 128)
         self.bn2 = nn.BatchNorm1d(128)
         self.d2 = nn.Dropout(0.3)
         self.act_2 = nn.ReLU()
 
-        self.layers3 = nn.Linear(128, 64)
+        self.layer3 = nn.Linear(128, 64)
         self.bn3 = nn.BatchNorm1d(64)
         self.d3 = nn.Dropout(0.3)
         self.act_3 = nn.ReLU()
@@ -121,16 +121,16 @@ class RegresionModelBig(nn.Module):
         self.d1 = nn.Dropout(0.3)
 
         self.layer2 = nn.Linear(512, 256)
-        self.bn2 = nn.BatchNorm1d(128)
+        self.bn2 = nn.BatchNorm1d(256)
         self.d2 = nn.Dropout(0.3)
         self.act_2 = nn.ReLU()
 
-        self.layer3 = nn.Linear(128, 64)
-        self.bn3 = nn.BatchNorm1d(64)
+        self.layer3 = nn.Linear(256, 128)
+        self.bn3 = nn.BatchNorm1d(128)
         self.d3 = nn.Dropout(0.3)
 
         self.act_3 = nn.ReLU()
-        self.layer4 = nn.Linear(64, 1)
+        self.layer4 = nn.Linear(128, 1)
 
     def forward(self, x):
         activation1 = self.act_1(self.layer1(x))

@@ -8,44 +8,62 @@ import pandas as pd
 import torch.utils.data as data
 import seaborn as sns
 import matplotlib.pyplot as plt
+import joblib
+from NN import RegresionModel
 
 class Playlist:
 
-    def __init__(self, models_parameters: dict, model_name) -> None:
-        self.models = self._create_models(models_parameters, model_name)
+    def __init__(self, models_parameters_NN: dict, models_parameters_GB) -> None:
+        self.number_of_attributes = 5
+        self.models_NN = self._create_models_NN(models_parameters_NN)
+        self.models_GB = self._create_models_GB(models_parameters_GB)
         self._genres_to_filter = ['pop', 'trap', 'rap', 'rock', 'metal', 'hip hop']
 
-    def _create_models(self, models_parameters: dict, model_name):
+    def _create_models_NN(self, models_parameters: dict):
         models = {}
         for genre, parameters_path in models_parameters.items():
-            model = model_name()
+            model = RegresionModel(self.number_of_attributes)
             model.load_state_dict(torch.load(parameters_path))
             model.eval()
             models[genre] = model
         return models
 
+    def _create_models_GB(self, models_parameters: dict):
+        models = {}
+        for genre, parameters_path in models_parameters.items():
+            model = joblib.load(parameters_path)
+            models[genre] = model
+        return models
+
     def _create_data_loader(self, tracks):
         tracks_tensor = torch.tensor(tracks.values, dtype=torch.float32)
-        return data.DataLoader(tracks_tensor, batch_size=256)
+        return data.DataLoader(tracks_tensor, batch_size=self.BATCH_SIZE)
 
-    def create_playlist(self, genre, length, tracks_path, artists_path):
-        if genre in self.models.keys():
-            model = self.models[genre]
-        else:
+    def create_playlist(self, genre, length, tracks_path, artists_path, model='NN'):
+        if genre not in self.models_NN.keys():
             return 'Wrong genre selected choose the one from : pop, trap' \
                     + 'rap, rock, metal, hip hop'
         self._tracks = self._get_tracks(tracks_path, artists_path, genre)
 
-        tracks = self._tracks.drop(["id", 'name', 'explicit', 'id_artist', 'key', 'release_date', 'popularity'], axis=1)
+        tracks = self._tracks.drop(["id", 'name', 'explicit', 'id_artist', 'key', 'release_date', 'popularity', \
+                                    'loudness', 'acousticness', 'explicit', 'valence',
+                                    'duration_ms', 'instrumentalness'], axis=1).to_numpy().astype(np.float32)
         rating = []
-        data_loader = self._create_data_loader(tracks)
-        for batch in data_loader:
-            out = model(batch)
-            rating.extend(out.tolist())
+        if model == 'NN':
+            model = self.models_NN[genre]
+            # data_loader = self._create_data_loader(tracks)
+            # for batch in data_loader:
+            out = model(torch.tensor(tracks))
+            rating = pd.Series(out.tolist()).apply(lambda x: x[0])
+        elif model == 'GB':
+            model = self.models_GB[genre]
+            rating = list(model.predict(tracks))
+        else:
+            return 'Wrong model selected'
 
         tracks_to_playlist = self._tracks.filter(items=['id', 'name', 'id_artist'])
         tracks_to_playlist['coherence'] = rating
-        tracks_to_playlist['coherence'] = tracks_to_playlist['coherence'].apply(lambda x: x[0])
+        # tracks_to_playlist['coherence'] = tracks_to_playlist['coherence'].apply(lambda x: x[0])
         tracks_to_playlist = tracks_to_playlist.sort_values('coherence', ascending=False)
         return tracks_to_playlist[:length]
 

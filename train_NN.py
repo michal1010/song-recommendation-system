@@ -8,14 +8,19 @@ import pandas as pd
 import torch.utils.data as data
 import seaborn as sns
 import matplotlib.pyplot as plt
-from RegresionModel import RegresionModel
+from NN import RegresionModel
+from sklearn.preprocessing import StandardScaler
+
 
 divided_songs = {}
 genres_to_filter = ['pop', 'trap', 'rap', 'rock', 'metal', 'hip hop']
 
 for genre in genres_to_filter:
     data_raw = pd.read_json(f'annotaded_tracks/{genre}_annotated.json', orient='records', lines=True)
-    data_raw = data_raw.drop(["id", 'name', 'explicit', 'id_artist', 'key', 'release_date', 'popularity' ], axis=1)
+    data_raw = data_raw.drop(["id", 'name', 'explicit', 'id_artist', 'key', 'release_date', 'popularity', \
+                            'loudness', 'acousticness', 'explicit', 'valence', 'duration_ms', 'instrumentalness'], axis=1)
+    scaler = StandardScaler()
+    data_raw.iloc[:, :-1] = scaler.fit_transform(data_raw.iloc[:, :-1])
     data_raw.loc[:, :] = data_raw.loc[:, :] .astype(float)
 
     train_data = torch.from_numpy(data_raw.values[:, :-1]).float()
@@ -23,7 +28,7 @@ for genre in genres_to_filter:
     train_dataset = data.TensorDataset(train_data, train_targets)
     data_loader_train = data.DataLoader(train_dataset, batch_size=256, shuffle=True)
     device = torch.device('cpu')
-    model = RegresionModel().to(device)
+    model = RegresionModel(train_data.shape[1]).to(device)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.01)
 
