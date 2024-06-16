@@ -7,7 +7,7 @@ app = FastAPI()
 
 
 # setting up the microservice: python -m uvicorn microservice:app --reload
-# example of using the microservice: curl http://127.0.0.1:8000/generate/neural?genre=pop&num_tracks=50
+# example of using the microservice: curl http://127.0.0.1:8000/generate/genre=pop&num_tracks=50&model=NN
 
 
 @app.get("/status")
@@ -19,9 +19,9 @@ async def check_status():
     """
     return {"status": "OK"}
 
-
-@app.get("/generate/neural", response_model=list)
-async def generate_neural(genre: str, num_tracks: int):
+# two models, GB and NN
+@app.get("/generate", response_model=list)
+async def generate_neural(genre: str, num_tracks: int, model: str):
     models_NN = {}
     models_GB = {}
     genres_to_filter = ['pop', 'trap', 'rap', 'rock', 'metal', 'hip hop']
@@ -30,12 +30,7 @@ async def generate_neural(genre: str, num_tracks: int):
     for genre in genres_to_filter:
         models_GB[genre] = f'state_dicts_GB/{genre}_state_dict.joblib'
     playlist = Playlist(models_NN, models_GB)
-    return playlist.create_playlist(genre, num_tracks, 'tracks.jsonl', 'artists.jsonl', model='NN').to_numpy().tolist()
-
-
-@app.get("/generate/sessions")
-async def generate_sessions():
-    pass
+    return playlist.create_playlist(genre, num_tracks, 'tracks.jsonl', 'artists.jsonl', model).to_numpy().tolist()
 
 
 @app.post("/generate/ab")
